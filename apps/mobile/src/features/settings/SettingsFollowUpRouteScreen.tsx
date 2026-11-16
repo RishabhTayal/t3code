@@ -6,6 +6,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText as Text } from "../../components/ui/AppText";
 import { DEFAULT_FOLLOW_UP_BEHAVIOR, type FollowUpBehavior } from "../../lib/followUpBehavior";
+import {
+  DEFAULT_PULL_REQUEST_LINK_TARGET,
+  type PullRequestLinkTarget,
+} from "../../lib/pullRequestLinkTarget";
 import { mobilePreferencesAtom, updateMobilePreferencesAtom } from "../../state/preferences";
 import { ListChoiceRow as SettingsChoiceRow } from "../../components/ui/ListChoiceRow";
 import { SettingsSection } from "./components/SettingsSection";
@@ -28,6 +32,23 @@ const FOLLOW_UP_OPTIONS: ReadonlyArray<{
   },
 ];
 
+const PULL_REQUEST_LINK_OPTIONS: ReadonlyArray<{
+  readonly target: PullRequestLinkTarget;
+  readonly label: string;
+  readonly description: string;
+}> = [
+  {
+    target: "app",
+    label: "T3 Code",
+    description: "Review the pull request inside T3 Code.",
+  },
+  {
+    target: "provider",
+    label: "GitHub app or browser",
+    description: "Hand the link to your device, which opens the GitHub app when it is installed.",
+  },
+];
+
 export function SettingsFollowUpRouteScreen() {
   const insets = useSafeAreaInsets();
   const preferencesResult = useAtomValue(mobilePreferencesAtom);
@@ -35,6 +56,9 @@ export function SettingsFollowUpRouteScreen() {
   const preferencesReady = AsyncResult.isSuccess(preferencesResult) && !preferencesResult.waiting;
   const selectedBehavior = AsyncResult.isSuccess(preferencesResult)
     ? (preferencesResult.value.followUpBehavior ?? DEFAULT_FOLLOW_UP_BEHAVIOR)
+    : null;
+  const selectedLinkTarget = AsyncResult.isSuccess(preferencesResult)
+    ? (preferencesResult.value.pullRequestLinkTarget ?? DEFAULT_PULL_REQUEST_LINK_TARGET)
     : null;
 
   const content = (
@@ -62,6 +86,19 @@ export function SettingsFollowUpRouteScreen() {
         Long-press the send button to use the other option for a single message. With a hardware
         keyboard, hold {Platform.OS === "android" ? "Ctrl" : "Command"} while sending.
       </Text>
+      <SettingsSection title="Open pull request links in">
+        {PULL_REQUEST_LINK_OPTIONS.map((option, index) => (
+          <SettingsChoiceRow
+            key={option.target}
+            label={option.label}
+            description={option.description}
+            selected={selectedLinkTarget === option.target}
+            separated={index > 0}
+            disabled={!preferencesReady}
+            onPress={() => savePreferences({ pullRequestLinkTarget: option.target })}
+          />
+        ))}
+      </SettingsSection>
     </ScrollView>
   );
 
